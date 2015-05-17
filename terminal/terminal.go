@@ -18,7 +18,7 @@ const (
 	terminalMinCols  = 80
 	terminalMinRows  = 24
 	leftSideBarWidth = 6
-	hourWidth        = 5
+	hourWidth        = 4
 )
 
 type dayData struct {
@@ -173,13 +173,15 @@ func (t *Terminal) Render() {
 
 		//build canvas with hours
 		for _, hour := range day.hourly {
-			temp := int(hour.temp - t.minTemp)
+			scaleTemp := int(hour.temp - t.minTemp)
+			color := ascii.NewColorByTemp(hour.temp)
+			t.canvas.SetColor(scaleTemp, hourCount*hourWidth+hourWidth/2, color)
 			if math.Floor(hour.temp+0.5) > math.Floor(hour.feels+0.5) {
-				t.canvas.Set(temp, hourCount*hourWidth+hourWidth/2, '\u2533')
+				t.canvas.Set(scaleTemp, hourCount*hourWidth+hourWidth/2, '\u2533')
 			} else if math.Floor(hour.temp+0.5) < math.Floor(hour.feels+0.5) {
-				t.canvas.Set(temp, hourCount*hourWidth+hourWidth/2, '\u253B')
+				t.canvas.Set(scaleTemp, hourCount*hourWidth+hourWidth/2, '\u253B')
 			} else {
-				t.canvas.Set(temp, hourCount*hourWidth+hourWidth/2, '\u2501') //\u2501 \u254B
+				t.canvas.Set(scaleTemp, hourCount*hourWidth+hourWidth/2, '\u2501') //\u2501 \u254B
 			}
 
 			if hour.tm.Hour() == 0 || hourCount == 0 {
@@ -206,7 +208,7 @@ func (t *Terminal) Render() {
 	}
 
 	outerScale := strings.Repeat(" ", leftSideBarWidth) +
-		fmt.Sprintf("\u2514%s%s\u2534%s\u2518", strings.Repeat("\u2500", hourWidth-1), "%s", strings.Repeat("\u2500", hourWidth-2))
+		fmt.Sprintf("\u2514%s%s\u2534%s\u2518", strings.Repeat("\u2500", hourWidth-1), "%s", strings.Repeat("\u2500", hourWidth-1))
 	innerScale := strings.Repeat(fmt.Sprintf("\u2534%s", strings.Repeat("\u2500", hourWidth-1)), hourCount-2)
 	hourScale := fmt.Sprintf(outerScale, innerScale)
 	fmt.Println(hourScale)
