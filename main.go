@@ -45,6 +45,7 @@ func main() {
 		fmt.Println(err.Error())
 		os.Exit(0)
 	}
+	config.Settings = conf
 
 	//request forecast data from forecast.io
 	location := conf.Locations[conf.DefaultLocation]

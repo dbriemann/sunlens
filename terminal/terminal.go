@@ -11,7 +11,9 @@ import (
 	"time"
 
 	"github.com/dbriemann/sunlens/ascii"
+	"github.com/dbriemann/sunlens/config"
 	"github.com/dbriemann/sunlens/forecastio"
+	"github.com/dbriemann/sunlens/utils"
 )
 
 const (
@@ -27,9 +29,11 @@ type dayData struct {
 }
 
 type hourData struct {
-	tm    time.Time
-	feels float64
-	temp  float64
+	tm                time.Time
+	feels             float64
+	temp              float64
+	precipIntensity   float64
+	precipProbability float64
 }
 
 //Terminal represents the basic type to render ascii weather
@@ -42,6 +46,7 @@ type Terminal struct {
 	tempRange int
 	days      []dayData
 	forecast  *forecastio.Forecast
+	conf      *config.Config
 	//canvas represents the weather curve area
 	canvas *ascii.Canvas
 }
@@ -109,7 +114,13 @@ func (t *Terminal) init() {
 		if hData.Temperature < t.minTemp {
 			t.minTemp = hData.Temperature
 		}
-		day.hourly = append(day.hourly, hourData{tm: tim, temp: hData.Temperature, feels: hData.ApparentTemperature})
+		day.hourly = append(day.hourly, hourData{
+			tm:                tim,
+			temp:              hData.Temperature,
+			feels:             hData.ApparentTemperature,
+			precipIntensity:   hData.PrecipIntensity,
+			precipProbability: hData.PrecipProbability,
+		})
 	}
 	//add the last non-finished day if it is no dummy..
 	if len(day.hourly) > 0 {
@@ -173,9 +184,13 @@ func (t *Terminal) Render() {
 
 		//build canvas with hours
 		for _, hour := range day.hourly {
+			fmt.Println("prob: ", hour.precipProbability, "intens: ", hour.precipIntensity)
 			scaleTemp := int(hour.temp - t.minTemp)
-			color := ascii.NewColorByTemp(hour.temp)
+			color := utils.NewColorByTemp(hour.temp, config.Settings.HeatMap)
+
 			t.canvas.SetColor(scaleTemp, hourCount*hourWidth+hourWidth/2, color)
+			t.canvas.SetAnsi(scaleTemp, hourCount*hourWidth+hourWidth/2, ascii.Bold)
+
 			if math.Floor(hour.temp+0.5) > math.Floor(hour.feels+0.5) {
 				t.canvas.Set(scaleTemp, hourCount*hourWidth+hourWidth/2, '\u2533')
 			} else if math.Floor(hour.temp+0.5) < math.Floor(hour.feels+0.5) {

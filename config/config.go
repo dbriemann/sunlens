@@ -7,7 +7,13 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/dbriemann/sunlens/utils"
 	"github.com/jasonmoo/geo"
+)
+
+//global settings
+var (
+	Settings *Config
 )
 
 type Location struct {
@@ -42,6 +48,7 @@ type Config struct {
 	//	Latitude         float64
 	//	Longitude        float64
 	UnitFormat string //us(farenheit, miles..), si(celsius, meters..), ca, uk, auto(location dependent)
+	HeatMap    []utils.HeatColor
 	/*
 		language may be one of the following:
 		bs (Bosnian), de (German), en (English, which is the default),
@@ -71,6 +78,13 @@ func LoadConfig(path string) (*Config, error) {
 		c.ApiKey = ""
 		c.UnitFormat = "auto"
 		c.Language = "en"
+		c.HeatMap = []utils.HeatColor{
+			utils.HeatColor{Temperature: -10, Color: utils.Color{R: 0, G: 0, B: 5}}, //blue
+			utils.HeatColor{Temperature: 0, Color: utils.Color{R: 0, G: 5, B: 5}},   //cyan
+			utils.HeatColor{Temperature: 10, Color: utils.Color{R: 0, G: 5, B: 0}},  //green
+			utils.HeatColor{Temperature: 20, Color: utils.Color{R: 5, G: 5, B: 0}},  //yellow
+			utils.HeatColor{Temperature: 30, Color: utils.Color{R: 5, G: 0, B: 0}},  //red
+		}
 
 		c.Locations = make([]Location, 1)
 		if c.Locations[0], err = NewLocation("Darmstadt"); err != nil {
