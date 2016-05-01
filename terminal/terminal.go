@@ -184,7 +184,7 @@ func (t *Terminal) Render() {
 
 		//build canvas with hours
 		for _, hour := range day.hourly {
-			fmt.Println("prob: ", hour.precipProbability, "intens: ", hour.precipIntensity)
+			// fmt.Println("prob: ", hour.precipProbability, "intens: ", hour.precipIntensity)
 			scaleTemp := int(hour.temp - t.minTemp)
 			color := utils.NewColorByTemp(hour.temp, config.Settings.HeatMap)
 
