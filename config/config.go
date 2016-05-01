@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/dbriemann/sunlens/utils"
 	"github.com/jasonmoo/geo"
+	"github.com/zensword/sunlens/utils"
 )
 
 //global settings
@@ -23,20 +23,22 @@ type Location struct {
 	Shortcut  string
 }
 
-//NewLocation creates a location from its shortcut description
+//NewLocation creates a location from its desc description
 //by querying the google api for lat, long and exact name
-func NewLocation(shortcut string) (Location, error) {
-	loc := Location{Shortcut: shortcut}
+func NewLocation(desc string) (Location, error) {
+	loc := Location{Shortcut: "#" + desc}
 
 	//find geo coordinates
-	add, err := geo.Geocode(shortcut)
+	add, err := geo.Geocode(desc)
 	if err != nil {
-		return loc, errors.New("Unable to get latitude and longitude for: " + shortcut + " Error: " + err.Error())
+		return loc, errors.New("Unable to get latitude and longitude for: " + desc + " Error: " + err.Error())
 	}
 
 	loc.City = add.Address
 	loc.Latitude = add.Lat
 	loc.Longitude = add.Lng
+
+	fmt.Println(loc)
 
 	return loc, nil
 }
@@ -61,7 +63,7 @@ type Config struct {
 }
 
 //LoadConfig creates a new Config object from a json file.
-func LoadConfig(path string) (*Config, error) {
+func LoadConfig(path string, loc Location) (*Config, error) {
 	c := &Config{}
 	b, err := ioutil.ReadFile(path)
 	if err == nil {
