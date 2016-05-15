@@ -11,7 +11,7 @@ import (
 	"github.com/zensword/sunlens/utils"
 )
 
-//global settings
+// global settings
 var (
 	Settings *Config
 )
@@ -23,12 +23,12 @@ type Location struct {
 	Shortcut  string
 }
 
-//NewLocation creates a location from its desc description
-//by querying the google api for lat, long and exact name
+// NewLocation creates a location from its desc description
+// by querying the google api for lat, long and exact name
 func NewLocation(desc string) (Location, error) {
 	loc := Location{Shortcut: "#" + desc}
 
-	//find geo coordinates
+	// find geo coordinates
 	add, err := geo.Geocode(desc)
 	if err != nil {
 		return loc, errors.New("Unable to get latitude and longitude for: " + desc + " Error: " + err.Error())
@@ -43,13 +43,13 @@ func NewLocation(desc string) (Location, error) {
 	return loc, nil
 }
 
-//Config stores all basic settings the user should adjust.
+// Config stores all basic settings the user should adjust.
 type Config struct {
 	ApiKey string
 	//	City             string
 	//	Latitude         float64
 	//	Longitude        float64
-	UnitFormat string //us(farenheit, miles..), si(celsius, meters..), ca, uk, auto(location dependent)
+	UnitFormat string // us(farenheit, miles..), si(celsius, meters..), ca, uk, auto(location dependent)
 	HeatMap    []utils.HeatColor
 	/*
 		language may be one of the following:
@@ -57,12 +57,12 @@ type Config struct {
 		es (Spanish), fr (French), it (Italian), nl (Dutch), pl (Polish),
 		pt (Portuguese), ru (Russian), tet (Tetum), or x-pig-latin (Igpay Atinlay)
 	*/
-	Language        string     //language code.. see above
-	DefaultLocation int        //sets the number of the default location in "Location" slice
-	Locations       []Location //saves all queried locations
+	Language        string     // language code.. see above
+	DefaultLocation int        // sets the number of the default location in "Location" slice
+	Locations       []Location // saves all queried locations
 }
 
-//LoadConfig creates a new Config object from a json file.
+// LoadConfig creates a new Config object from a json file.
 func LoadConfig(path string, loc Location) (*Config, error) {
 	c := &Config{}
 	b, err := ioutil.ReadFile(path)
@@ -76,7 +76,7 @@ func LoadConfig(path string, loc Location) (*Config, error) {
 		return c, err
 	}
 	if _, ok := err.(*os.PathError); ok {
-		//default fallback values if no config is found
+		// default fallback values if no config is found
 		c.ApiKey = ""
 		c.UnitFormat = "auto"
 		c.Language = "en"
@@ -104,7 +104,7 @@ func LoadConfig(path string, loc Location) (*Config, error) {
 	return c, err
 }
 
-//Save saves the Config object c to a json file.
+// Save saves the Config object c to a json file.
 func (c *Config) Save(path string) error {
 	j, err := json.MarshalIndent(c, "", "\t")
 	if err == nil {

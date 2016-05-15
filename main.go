@@ -1,10 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/user"
 	"path"
+
+	"fmt"
 
 	"github.com/zensword/sunlens/config"
 	"github.com/zensword/sunlens/forecastio"
@@ -99,7 +100,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	fmt.Printf("Weather for: %s [shortcut:%s]\n", loc.City, loc.Shortcut)
+	fmt.Printf(" Weather for: %s [shortcut:%s]\n", loc.City, loc.Shortcut)
 
 	term.Render()
 }

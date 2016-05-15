@@ -34,9 +34,11 @@ type hourData struct {
 	temp              float64
 	precipIntensity   float64
 	precipProbability float64
+	precipType        string
+	cloudCover        float64
 }
 
-//Terminal represents the basic type to render ascii weather
+// Terminal represents the basic type to render ascii weather
 type Terminal struct {
 	rows      int
 	cols      int
@@ -47,14 +49,14 @@ type Terminal struct {
 	days      []dayData
 	forecast  *forecastio.Forecast
 	conf      *config.Config
-	//canvas represents the weather curve area
+	// canvas represents the weather curve area
 	canvas *ascii.Canvas
 }
 
-//NewTerminal creates a new terminal renderer with forecast data
+// NewTerminal creates a new terminal renderer with forecast data
 func NewTerminal(fc *forecastio.Forecast) (*Terminal, error) {
 	t := &Terminal{}
-	//check terminal size
+	// check terminal size
 	cmd := exec.Command("stty", "size")
 	cmd.Stdin = os.Stdin
 	resp, err := cmd.Output()
@@ -83,6 +85,9 @@ func NewTerminal(fc *forecastio.Forecast) (*Terminal, error) {
 }
 
 func (t *Terminal) init() {
+	// add spacing to right border and avoid linebreaks for certain widths
+	t.cols--
+
 	t.days = make([]dayData, 0)
 	t.hours = (t.cols - leftSideBarWidth) / hourWidth
 	if timeRange := len(t.forecast.Hourly.Data); timeRange < t.hours {
@@ -93,13 +98,13 @@ func (t *Terminal) init() {
 	t.minTemp = 1000.0
 
 	day := dayData{hourly: make([]hourData, 0), tm: nil}
-	//get all data points for the presentable time interval
+	// get all data points for the presentable time interval
 	for i := 0; i < t.hours; i++ {
 		hData := t.forecast.Hourly.Data[i]
 		tim := time.Unix(hData.Time, 0).Local()
 
 		if tim.Hour() == 0 && len(day.hourly) > 0 {
-			//the last day is over and is not an empty dummy object..
+			// the last day is over and is not an empty dummy object..
 			t.days = append(t.days, day)
 			day = dayData{hourly: make([]hourData, 0), tm: nil} //create a new day
 		}
@@ -120,30 +125,32 @@ func (t *Terminal) init() {
 			feels:             hData.ApparentTemperature,
 			precipIntensity:   hData.PrecipIntensity,
 			precipProbability: hData.PrecipProbability,
+			precipType:        hData.PrecipType,
+			cloudCover:        hData.CloudCover,
 		})
 	}
-	//add the last non-finished day if it is no dummy..
+	// add the last non-finished day if it is no dummy..
 	if len(day.hourly) > 0 {
 		t.days = append(t.days, day)
 	}
 
-	//calculate range for temperature scale
+	// calculate range for temperature scale
 	t.maxTemp = math.Ceil(t.maxTemp)
-	absmod := ((int(t.maxTemp) % 2) + 2) % 2 //double modulo to force positive result
-	oe := 2 - absmod                         //1 if maxTemp is odd and 2 if maxTemp is even
+	absmod := ((int(t.maxTemp) % 2) + 2) % 2 // double modulo to force positive result
+	oe := 2 - absmod                         // 1 if maxTemp is odd and 2 if maxTemp is even
 	t.maxTemp += float64(oe)
 
 	t.minTemp = math.Floor(t.minTemp)
-	absmod = ((int(t.minTemp) % 2) + 2) % 2 //double modulo to force positive result
-	oe = 2 - absmod                         //1 if minTemp is odd and 2 if minTemp is even
-	t.minTemp -= float64(oe)
+	absmod = ((int(t.minTemp) % 2) + 2) % 2 // double modulo to force positive result
+	oe = 2 - absmod                         // 1 if minTemp is odd and 2 if minTemp is even
+	t.minTemp -= float64(oe) + 2            // add 2 so there is more space for weather indicators (rain, snow, sun, clouds..)
 
-	t.tempRange = int(t.maxTemp - t.minTemp + 1) //bounds inclusive
+	t.tempRange = int(t.maxTemp - t.minTemp + 1) // bounds inclusive
 
 	t.canvas = ascii.NewCanvas(t.tempRange, t.hours*hourWidth)
 }
 
-//Render renders the weather forecast to the terminal
+// Render renders the weather forecast to the terminal
 func (t *Terminal) Render() {
 	dateLineTop := "\u250C%s\u2510"
 	dateLineMiddle := "\u2502%s%s\u2502"
@@ -153,7 +160,7 @@ func (t *Terminal) Render() {
 	headerBottom := strings.Repeat(" ", leftSideBarWidth)
 
 	hourCount := 0
-	hours := make([]int, 0)
+	var hours []int
 
 	for _, day := range t.days {
 		hoursLeft := len(day.hourly)
@@ -182,25 +189,47 @@ func (t *Terminal) Render() {
 		headerMiddle += fmt.Sprintf(dateLineMiddle, dayDesc, middleFill)
 		headerBottom += fmt.Sprintf(dateLineBottom, bottomFill)
 
-		//build canvas with hours
+		// build canvas with hours
 		for _, hour := range day.hourly {
-			// fmt.Println("prob: ", hour.precipProbability, "intens: ", hour.precipIntensity)
+			fmt.Println("prob: ", hour.precipProbability, "intens: ", hour.precipIntensity)
 			scaleTemp := int(hour.temp - t.minTemp)
 			color := utils.NewColorByTemp(hour.temp, config.Settings.HeatMap)
 
-			t.canvas.SetColor(scaleTemp, hourCount*hourWidth+hourWidth/2, color)
-			t.canvas.SetAnsi(scaleTemp, hourCount*hourWidth+hourWidth/2, ascii.Bold)
+			column := hourCount*hourWidth + hourWidth/2
+
+			t.canvas.SetColor(scaleTemp, column, color)
+			t.canvas.SetAnsi(scaleTemp, column, ascii.Bold)
 
 			if math.Floor(hour.temp+0.5) > math.Floor(hour.feels+0.5) {
-				t.canvas.Set(scaleTemp, hourCount*hourWidth+hourWidth/2, '\u2533')
+				t.canvas.Set(scaleTemp, column, '\u2533')
 			} else if math.Floor(hour.temp+0.5) < math.Floor(hour.feels+0.5) {
-				t.canvas.Set(scaleTemp, hourCount*hourWidth+hourWidth/2, '\u253B')
+				t.canvas.Set(scaleTemp, column, '\u253B')
 			} else {
-				t.canvas.Set(scaleTemp, hourCount*hourWidth+hourWidth/2, '\u2501') //\u2501 \u254B
+				t.canvas.Set(scaleTemp, column, '\u2501') //\u2501 \u254B
+			}
+
+			// set weather indicators -> sunny, rainy, snowy, cloudy...
+			// TODO -- put this in a function
+			t.canvas.SetAnsi(0, column, ascii.Bold)
+			if hour.precipProbability > 0.3 { // rainy / snowy
+				if hour.precipType == "rain" {
+					t.canvas.SetColor(0, column, utils.Color{R: 0, G: 5, B: 5})
+					t.canvas.Set(0, column, '\u2614')
+				} else { // freezy
+					// snow, hail, ..
+					t.canvas.SetColor(0, column, utils.Color{R: 5, G: 5, B: 5})
+					t.canvas.Set(0, column, '*')
+				}
+			} else if hour.cloudCover >= 0.4 { // cloudy
+				t.canvas.SetColor(0, column, utils.Color{R: 4, G: 4, B: 4})
+				t.canvas.Set(0, column, '\u2601')
+			} else { // sunny
+				t.canvas.SetColor(0, column, utils.Color{R: 5, G: 5, B: 0})
+				t.canvas.Set(0, column, '\u2600')
 			}
 
 			if hour.tm.Hour() == 0 || hourCount == 0 {
-				//set vertical ..
+				// set vertical ..
 				t.canvas.SetVerticalBar(hourCount*hourWidth, '\u2502')
 			}
 
