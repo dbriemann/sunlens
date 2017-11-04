@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zensword/sunlens/ascii"
-	"github.com/zensword/sunlens/config"
-	"github.com/zensword/sunlens/forecastio"
-	"github.com/zensword/sunlens/utils"
+	"github.com/dbriemann/sunlens/ascii"
+	"github.com/dbriemann/sunlens/config"
+	"github.com/dbriemann/sunlens/forecastio"
+	"github.com/dbriemann/sunlens/utils"
 )
 
 const (

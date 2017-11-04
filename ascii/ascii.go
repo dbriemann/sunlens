@@ -3,7 +3,7 @@ package ascii
 import (
 	"fmt"
 
-	"github.com/zensword/sunlens/utils"
+	"github.com/dbriemann/sunlens/utils"
 )
 
 const (

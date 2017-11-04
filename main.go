@@ -7,9 +7,9 @@ import (
 
 	"fmt"
 
-	"github.com/zensword/sunlens/config"
-	"github.com/zensword/sunlens/forecastio"
-	"github.com/zensword/sunlens/terminal"
+	"github.com/dbriemann/sunlens/config"
+	"github.com/dbriemann/sunlens/forecastio"
+	"github.com/dbriemann/sunlens/terminal"
 )
 
 const (

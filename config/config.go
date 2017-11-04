@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/dbriemann/sunlens/utils"
 	"github.com/jasonmoo/geo"
-	"github.com/zensword/sunlens/utils"
 )
 
 // global settings
