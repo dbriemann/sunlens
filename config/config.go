@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/dbriemann/geopard"
 	"github.com/dbriemann/sunlens/utils"
-	"github.com/jasonmoo/geo"
 )
 
 // global settings
@@ -29,14 +29,18 @@ func NewLocation(desc string) (Location, error) {
 	loc := Location{Shortcut: "#" + desc}
 
 	// find geo coordinates
-	add, err := geo.Geocode(desc)
-	if err != nil {
-		return loc, errors.New("Unable to get latitude and longitude for: " + desc + " Error: " + err.Error())
-	}
+	instance := geopard.GetInstance()
 
-	loc.City = add.Address
-	loc.Latitude = add.Lat
-	loc.Longitude = add.Lng
+	r, err := instance.Geocode(desc)
+	if err != nil {
+		return loc, errors.New("Unable to get latitude and longitude for: " + desc + "\nError: " + err.Error())
+	}
+	if len(r.Results) > 0 {
+		// Just use first(best) result.
+		loc.City = r.Results[0].FormattedAddr
+		loc.Latitude = r.Results[0].Geometry.Location.Lat
+		loc.Longitude = r.Results[0].Geometry.Location.Lng
+	}
 
 	fmt.Println(loc)
 

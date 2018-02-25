@@ -46,6 +46,7 @@ type Terminal struct {
 	maxTemp   float64
 	minTemp   float64
 	tempRange int
+	tempUnit  string
 	days      []dayData
 	forecast  *forecastio.Forecast
 	conf      *config.Config
@@ -85,6 +86,17 @@ func NewTerminal(fc *forecastio.Forecast) (*Terminal, error) {
 }
 
 func (t *Terminal) init() {
+	switch t.forecast.Flags.Units {
+	case "si":
+		t.tempUnit = "C"
+	case "us":
+		t.tempUnit = "F"
+	case "uk":
+		t.tempUnit = "C"
+	case "ca":
+		t.tempUnit = "C"
+
+	}
 	// add spacing to right border and avoid linebreaks for certain widths
 	t.cols--
 
@@ -136,14 +148,20 @@ func (t *Terminal) init() {
 
 	// calculate range for temperature scale
 	t.maxTemp = math.Ceil(t.maxTemp)
-	absmod := ((int(t.maxTemp) % 2) + 2) % 2 // double modulo to force positive result
-	oe := 2 - absmod                         // 1 if maxTemp is odd and 2 if maxTemp is even
-	t.maxTemp += float64(oe)
+	if int(t.maxTemp)%2 != 0 {
+		t.maxTemp++
+	}
+	//	absmod := ((int(t.maxTemp) % 2) + 2) % 2 // double modulo to force positive result
+	//	oe := 2 - absmod                         // 1 if maxTemp is odd and 2 if maxTemp is even
+	//	t.maxTemp += float64(oe)
 
 	t.minTemp = math.Floor(t.minTemp)
-	absmod = ((int(t.minTemp) % 2) + 2) % 2 // double modulo to force positive result
-	oe = 2 - absmod                         // 1 if minTemp is odd and 2 if minTemp is even
-	t.minTemp -= float64(oe) + 2            // add 2 so there is more space for weather indicators (rain, snow, sun, clouds..)
+	if int(t.minTemp)%2 != 0 {
+		t.minTemp--
+	}
+	//	absmod = ((int(t.minTemp) % 2) + 2) % 2 // double modulo to force positive result
+	//	oe = 2 - absmod                         // 1 if minTemp is odd and 2 if minTemp is even
+	//	t.minTemp -= float64(oe) + 2            // add 2 so there is more space for weather indicators (rain, snow, sun, clouds..)
 
 	t.tempRange = int(t.maxTemp - t.minTemp + 1) // bounds inclusive
 
@@ -192,7 +210,7 @@ func (t *Terminal) Render() {
 		// build canvas with hours
 		for _, hour := range day.hourly {
 			scaleTemp := int(hour.temp - t.minTemp)
-			color := utils.NewColorByTemp(hour.temp, config.Settings.HeatMap)
+			color := utils.NewColorByTemp(hour.temp, config.Settings.HeatMap, t.tempUnit)
 
 			column := hourCount*hourWidth + hourWidth/2
 
@@ -209,23 +227,23 @@ func (t *Terminal) Render() {
 
 			// set weather indicators -> sunny, rainy, snowy, cloudy...
 			// TODO -- put this in a function
-			t.canvas.SetAnsi(0, column, ascii.Bold)
-			if hour.precipProbability > 0.3 { // rainy / snowy
-				if hour.precipType == "rain" {
-					t.canvas.SetColor(0, column, utils.Color{R: 0, G: 5, B: 5})
-					t.canvas.Set(0, column, '\u2614')
-				} else { // freezy
-					// snow, hail, ..
-					t.canvas.SetColor(0, column, utils.Color{R: 5, G: 5, B: 5})
-					t.canvas.Set(0, column, '*')
-				}
-			} else if hour.cloudCover >= 0.4 { // cloudy
-				t.canvas.SetColor(0, column, utils.Color{R: 4, G: 4, B: 4})
-				t.canvas.Set(0, column, '\u2601')
-			} else { // sunny
-				t.canvas.SetColor(0, column, utils.Color{R: 5, G: 5, B: 0})
-				t.canvas.Set(0, column, '\u2600')
-			}
+			//			t.canvas.SetAnsi(0, column, ascii.Bold)
+			//			if hour.precipProbability > 0.3 { // rainy / snowy
+			//				if hour.precipType == "rain" {
+			//					t.canvas.SetColor(0, column, utils.Color{R: 0, G: 5, B: 5})
+			//					t.canvas.Set(0, column, '\u2614')
+			//				} else { // freezy
+			//					// snow, hail, ..
+			//					t.canvas.SetColor(0, column, utils.Color{R: 5, G: 5, B: 5})
+			//					t.canvas.Set(0, column, '*')
+			//				}
+			//			} else if hour.cloudCover >= 0.4 { // cloudy
+			//				t.canvas.SetColor(0, column, utils.Color{R: 4, G: 4, B: 4})
+			//				t.canvas.Set(0, column, '\u2601')
+			//			} else { // sunny
+			//				t.canvas.SetColor(0, column, utils.Color{R: 5, G: 5, B: 0})
+			//				t.canvas.Set(0, column, '\u2600')
+			//			}
 
 			if hour.tm.Hour() == 0 || hourCount == 0 {
 				// set vertical ..
@@ -244,7 +262,7 @@ func (t *Terminal) Render() {
 
 	for i := int(t.maxTemp); i >= int(t.minTemp); i-- {
 		if i%2 == 0 {
-			fmt.Printf("%3d°C %s\n", i, t.canvas.Row(i-int(t.minTemp)))
+			fmt.Printf("%3d°%s %s\n", i, t.tempUnit, t.canvas.Row(i-int(t.minTemp)))
 		} else {
 			fmt.Printf("%s%s\n", strings.Repeat(" ", leftSideBarWidth), t.canvas.Row(i-int(t.minTemp)))
 		}

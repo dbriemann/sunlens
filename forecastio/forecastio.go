@@ -11,7 +11,7 @@ import (
 //various constant values...
 const (
 	//QueryURL format: https://api.forecast.io/forecast/APIKEY/LATITUDE,LONGITUDE[,TIME]?parameters..
-	QueryURL = "https://api.forecast.io/forecast/%s/%.5f,%.5f?units=%s&lang=%s"
+	QueryURL = "https://api.darksky.net/forecast/%s/%.5f,%.5f?units=%s&lang=%s"
 
 	CA   string = "ca"
 	SI   string = "si"

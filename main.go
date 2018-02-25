@@ -7,6 +7,7 @@ import (
 
 	"fmt"
 
+	"github.com/dbriemann/geopard"
 	"github.com/dbriemann/sunlens/config"
 	"github.com/dbriemann/sunlens/forecastio"
 	"github.com/dbriemann/sunlens/terminal"
@@ -103,4 +104,6 @@ func main() {
 	fmt.Printf(" Weather for: %s [shortcut:%s]\n", loc.City, loc.Shortcut)
 
 	term.Render()
+
+	geopard.GetInstance().Destroy()
 }

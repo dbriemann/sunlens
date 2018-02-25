@@ -56,8 +56,8 @@ func (c *Canvas) SetAnsi(row, col int, str string) {
 	}
 }
 
-//SetColor transforms "mini" RGB values (0 to 5) to terminal ansi code
-//and sets the corresponding color for the specified coordinate
+// SetColor transforms "mini" RGB values (0 to 5) to terminal ansi code
+// and sets the corresponding color for the specified coordinate
 func (c *Canvas) SetColor(row, col int, color utils.Color) { //uint8
 	//sadly a lot of terminals don't support true colors yet..
 	//in the future this would be a better alternative:
