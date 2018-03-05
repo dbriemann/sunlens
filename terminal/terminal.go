@@ -141,27 +141,22 @@ func (t *Terminal) init() {
 			cloudCover:        hData.CloudCover,
 		})
 	}
+
 	// add the last non-finished day if it is no dummy..
 	if len(day.hourly) > 0 {
 		t.days = append(t.days, day)
 	}
 
 	// calculate range for temperature scale
-	t.maxTemp = math.Ceil(t.maxTemp)
-	if int(t.maxTemp)%2 != 0 {
-		t.maxTemp++
-	}
-	//	absmod := ((int(t.maxTemp) % 2) + 2) % 2 // double modulo to force positive result
-	//	oe := 2 - absmod                         // 1 if maxTemp is odd and 2 if maxTemp is even
-	//	t.maxTemp += float64(oe)
+	t.maxTemp = math.Round(t.maxTemp)
+	//	if int(t.maxTemp)%2 != 0 {
+	//		t.maxTemp++
+	//	}
 
-	t.minTemp = math.Floor(t.minTemp)
-	if int(t.minTemp)%2 != 0 {
-		t.minTemp--
-	}
-	//	absmod = ((int(t.minTemp) % 2) + 2) % 2 // double modulo to force positive result
-	//	oe = 2 - absmod                         // 1 if minTemp is odd and 2 if minTemp is even
-	//	t.minTemp -= float64(oe) + 2            // add 2 so there is more space for weather indicators (rain, snow, sun, clouds..)
+	t.minTemp = math.Round(t.minTemp)
+	//	if int(t.minTemp)%2 != 0 {
+	//		t.minTemp--
+	//	}
 
 	t.tempRange = int(t.maxTemp - t.minTemp + 1) // bounds inclusive
 
@@ -209,7 +204,7 @@ func (t *Terminal) Render() {
 
 		// build canvas with hours
 		for _, hour := range day.hourly {
-			scaleTemp := int(hour.temp - t.minTemp)
+			scaleTemp := int(math.Round(hour.temp - t.minTemp))
 			color := utils.NewColorByTemp(hour.temp, config.Settings.HeatMap, t.tempUnit)
 
 			column := hourCount*hourWidth + hourWidth/2
@@ -217,9 +212,12 @@ func (t *Terminal) Render() {
 			t.canvas.SetColor(scaleTemp, column, color)
 			t.canvas.SetAnsi(scaleTemp, column, ascii.Bold)
 
-			if math.Floor(hour.temp+0.5) > math.Floor(hour.feels+0.5) {
+			htemp := int(math.Round(hour.temp))
+			hfeels := int(math.Round(hour.feels))
+
+			if htemp > hfeels {
 				t.canvas.Set(scaleTemp, column, '\u2533')
-			} else if math.Floor(hour.temp+0.5) < math.Floor(hour.feels+0.5) {
+			} else if htemp < hfeels {
 				t.canvas.Set(scaleTemp, column, '\u253B')
 			} else {
 				t.canvas.Set(scaleTemp, column, '\u2501') //\u2501 \u254B
@@ -261,11 +259,12 @@ func (t *Terminal) Render() {
 	fmt.Println(headerBottom)
 
 	for i := int(t.maxTemp); i >= int(t.minTemp); i-- {
-		if i%2 == 0 {
-			fmt.Printf("%3d°%s %s\n", i, t.tempUnit, t.canvas.Row(i-int(t.minTemp)))
-		} else {
-			fmt.Printf("%s%s\n", strings.Repeat(" ", leftSideBarWidth), t.canvas.Row(i-int(t.minTemp)))
-		}
+		fmt.Printf("%3d°%s %s\n", i, t.tempUnit, t.canvas.Row(i-int(t.minTemp)))
+		//		if i%2 == 0 {
+		//			fmt.Printf("%3d°%s %s\n", i, t.tempUnit, t.canvas.Row(i-int(t.minTemp)))
+		//		} else {
+		//			fmt.Printf("%s%s\n", strings.Repeat(" ", leftSideBarWidth), t.canvas.Row(i-int(t.minTemp)))
+		//		}
 	}
 
 	outerScale := strings.Repeat(" ", leftSideBarWidth) +

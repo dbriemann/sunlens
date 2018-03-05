@@ -15,7 +15,7 @@ type HeatColor struct {
 func NewColorByTemp(temp float64, heatMap []HeatColor, unit string) Color {
 	if unit == "F" {
 		// convert to celsius for heatmap
-		temp = (temp - 32.0) * 1.8
+		temp = (temp - 32.0) / 1.8
 	}
 	//min color
 	if temp < heatMap[0].Temperature {
